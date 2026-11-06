@@ -1,0 +1,55 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>1분 영어 말하기</title>
+<!-- 할 일 28 다 (클로드 코드 2026-11-04) · 승인 대기 · 내부 초안, 공개 안 함. 1분 타이머 + 브라우저 음성 입력(영어) → 단어 수 → 저장설정.js 로 「동행 측정」에 전송. https 또는 localhost에서만 마이크가 열린다. -->
+<style>
+:root{--navy:#0d1526;--gold:#c79a3f;--ink:#20242e;--mut:#646a76;--line:#d9d5ca;--bg:#fbf9f4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 -apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+header{background:var(--navy);color:#fff;padding:18px 16px}header b{color:var(--gold)}main{max-width:640px;margin:auto;padding:20px 16px 60px}
+h2{font-size:21px;margin:.2em 0 .6em}.note{color:var(--mut);font-size:14px}
+label{display:block;padding:9px 12px;border:1px solid var(--line);border-radius:8px;margin:5px 0;background:#fff;cursor:pointer}
+button{background:var(--navy);color:#fff;border:0;border-radius:8px;padding:13px 20px;font:600 16px inherit;cursor:pointer;margin-top:12px}button:disabled{opacity:.45;cursor:default}
+.timer{font-size:54px;font-weight:800;color:var(--navy);text-align:center;margin:10px 0}.live{min-height:90px;padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px}
+.live i{color:var(--mut)}.res{font-size:30px;color:var(--navy);font-weight:800}
+.send{margin-top:22px;padding:14px;border:1px solid var(--line);border-radius:10px;background:#fff}.send input{display:block;width:100%;padding:11px;margin:6px 0;border:1px solid var(--line);border-radius:8px;font:inherit}
+</style></head><body><header><b>이기는 법</b> · 1분 영어 말하기 (내부 초안, 공개 안 함)</header><main id="m"></main>
+<script src="저장설정.js"></script>
+<script>
+// 주제는 체크 데이마다 같은 것을 고르면 비교가 공정하다(첫 기록과 같은 주제 권함).
+const TOPICS=["나를 소개해 주세요 (이름, 하는 일, 좋아하는 것)","오늘 하루, 아침부터 지금까지 한 일","지난 주말에 한 일","요즘 영어 공부를 하는 이유"];
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+const m=document.getElementById("m");
+const count=t=>(t.match(/[A-Za-z0-9]+(?:'[A-Za-z]+)?/g)||[]).length;
+function start(){
+  if(!SR){m.innerHTML=`<h2>이 브라우저에서는 음성 입력이 안 돼요</h2><p>휴대폰은 크롬(안드로이드)이나 사파리(아이폰), 컴퓨터는 크롬에서 다시 열어 주세요.</p>`;return}
+  m.innerHTML=`<h2>1분 동안 영어로 말해 보세요</h2><p>틀려도 괜찮아요. 멈추지 않고 이어 가는 게 목표예요. 1분이 지나면 말한 단어 수를 세어 드려요.</p>
+  <p><b>주제 하나를 고르세요</b> <span class="note">(지난번과 같은 주제면 비교가 정확해요)</span></p>${TOPICS.map((t,i)=>`<label><input type="radio" name="t" value="${i}"${i===0?" checked":""}> ${t}</label>`).join("")}
+  <p class="note">시작을 누르면 마이크 허락을 물어요. 「허용」을 눌러 주세요. 조용한 곳이 좋아요.</p><button id="go">시작</button>`;
+  document.getElementById("go").onclick=()=>run(TOPICS[+document.querySelector("input[name=t]:checked").value]);
+}
+function run(topic){
+  m.innerHTML=`<div class="note">${topic}</div><div class="timer" id="tm">60</div><div class="live" id="lv"><i>듣고 있어요… 영어로 말해 주세요</i></div><button id="stop">일찍 끝내기</button>`;
+  const tm=document.getElementById("tm"),lv=document.getElementById("lv");
+  let finals=[],interim="",left=60,on=true,heard=false;
+  const rec=new SR();rec.lang="en-US";rec.continuous=true;rec.interimResults=true;
+  rec.onresult=e=>{interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finals.push(t.trim());else interim+=t}heard=true;lv.textContent=(finals.join(" ")+" "+interim).trim()};
+  rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){on=false;clearInterval(iv);m.innerHTML=`<h2>마이크를 쓸 수 없어요</h2><p>브라우저 설정에서 이 페이지의 마이크를 허용한 뒤 다시 열어 주세요.</p>`}};
+  // 휴대폰은 말이 끊기면 음성 입력이 저절로 멈춘다 → 1분이 남았으면 다시 켠다.
+  rec.onend=()=>{if(on){try{rec.start()}catch(e){}}};
+  try{rec.start()}catch(e){}
+  const iv=setInterval(()=>{left--;tm.textContent=left;if(left<=0)finish()},1000);
+  const finish=()=>{if(!on)return;on=false;clearInterval(iv);try{rec.stop()}catch(e){}setTimeout(()=>{const text=(finals.join(" ")+" "+interim).trim();done(topic,text,60-Math.max(left,0),heard)},900)};
+  document.getElementById("stop").onclick=finish;
+}
+function save(r){try{const k="winning_speaking",h=JSON.parse(localStorage.getItem(k)||"[]");h.push(r);localStorage.setItem(k,JSON.stringify(h));return h}catch(e){return[r]}}
+function done(topic,text,secs,heard){
+  const words=count(text),h=save({date:new Date().toISOString().slice(0,10),topic,words,secs}),first=h[0];
+  m.innerHTML=`<div class="note">결과 · ${secs}초</div><div class="res">${words}단어</div>
+  <p>${heard?"1분 동안 영어로 말한 단어 수예요. 다음 체크 데이에 같은 주제로 다시 재면 늘었는지 바로 보여요.":"말소리를 거의 못 들었어요. 마이크 가까이에서 한 번 더 해 보세요."}</p>
+  <p class="note">처음 잰 날: ${first.words}단어 (${first.date})${secs<60?" · 1분을 다 채우지 않은 기록이에요":""}</p>
+  <details><summary>알아들은 말 보기</summary><p class="live" id="tx"></p></details>
+  <p class="note">음성 입력이 알아듣지 못한 말은 세지 않아요. 그래서 실제로 한 말보다 조금 적게 나올 수 있어요. 비교는 늘 같은 방법으로 잰 숫자끼리 해요.</p>
+  <div id="sb"></div><button onclick="start()">다시 하기</button>`;
+  document.getElementById("tx").textContent=text||"(없음)";
+  winSendBox(document.getElementById("sb"),()=>({kind:"말하기",words,topic,transcript:text,secs}));
+}
+window.__t={count};start();
+</script></body></html>
