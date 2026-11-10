@@ -18,6 +18,8 @@ window.winSend = async function (rec) {
 };
 // 결과 화면에 붙이는 「한 번에 보내기」 칸. host에 그리고, getRec()이 보낼 값을 준다.
 window.winSendBox = function (host, getRec) {
+  // 챌린지 링크(?c=1)에서는 보내기 칸을 그리지 않는다(챌린지 동의 범위 밖, 할 일 50).
+  if (new URLSearchParams(location.search).get("c") === "1") { host.innerHTML = ""; return; }
   const who = window.winWho();
   host.innerHTML = `<div class="send"><p><b>기록 보내기</b> · 이름과 이메일을 적고 한 번 누르면 끝나요. 다음에 잴 때 오늘 숫자와 비교하는 데만 써요.</p>
 <input id="wn" placeholder="이름" autocomplete="name"><input id="we" type="email" placeholder="이메일(동행에 등록한 주소)" autocomplete="email">
