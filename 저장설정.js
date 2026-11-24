@@ -1,7 +1,7 @@
 // 동행 측정 저장처 (할 일 28 나). 레벨테스트.html·1분말하기.html이 같이 쓴다.
 // ENDPOINT = 구글 시트 「동행 측정」 탭에 붙인 Apps Script 웹 앱 주소(저장/동행측정_AppsScript.gs, 저장/연결순서.md).
 // 비어 있으면 보내지 않고 이 기기에만 남긴다(내부 초안 상태).
-window.WIN_ENDPOINT = "";
+window.WIN_ENDPOINT = "https://script.google.com/macros/s/AKfycbzDFcx0rIllv85rxrNY6vGKtSnVPSUPSgOASiJiiGLwRFvsC2F0peExLpKpT26qF3pXHw/exec";
 window.winWho = function () { try { return JSON.parse(localStorage.getItem("winning_who") || "{}"); } catch (e) { return {}; } };
 window.winRemember = function (who) { try { localStorage.setItem("winning_who", JSON.stringify(who)); } catch (e) {} };
 // rec: {kind:"듣기"|"말하기", name, email, ...}. 결과: "sent" | "noendpoint" | "fail"
